@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Invaders 👾</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #0a0a12;
+            --color-bg-card: #12121f;
+            --color-primary: #00ff88;
+            --color-primary-glow: rgba(0, 255, 136, 0.4);
+            --color-secondary: #ff3366;
+            --color-accent: #ffcc00;
+            --color-text: #f0f0f5;
+            --color-text-muted: #6a6a8a;
+            --font-game: 'Press Start 2P', cursive;
+            --font-display: 'Outfit', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background: var(--color-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Starfield Background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(0, 255, 136, 0.05) 0%, transparent 40%),
+                radial-gradient(ellipse at 70% 80%, rgba(255, 51, 102, 0.05) 0%, transparent 40%),
+                var(--color-bg);
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, white, transparent),
+                radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                radial-gradient(1px 1px at 90px 40px, white, transparent),
+                radial-gradient(2px 2px at 130px 80px, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 160px 120px, white, transparent);
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: twinkle 4s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Header */
+        .game-header {
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 900px;
+        }
+
+        .game-title {
+            font-family: var(--font-game);
+            font-size: 1.2rem;
+            color: var(--color-primary);
+            text-shadow: 0 0 20px var(--color-primary-glow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .game-title span {
+            font-size: 1.8rem;
+        }
+
+        .back-link {
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-link:hover {
+            color: var(--color-primary);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 40px;
+            padding: 16px 32px;
+            background: var(--color-bg-card);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-family: var(--font-game);
+            font-size: 0.6rem;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: var(--font-game);
+            font-size: 1.2rem;
+            color: var(--color-accent);
+        }
+
+        .stat-value.lives {
+            color: var(--color-secondary);
+            letter-spacing: 4px;
+        }
+
+        .stat-value.level {
+            color: var(--color-primary);
+        }
+
+        /* Game Container */
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            max-width: calc(100vw - 20px);
+            background: linear-gradient(180deg, rgba(10,10,18,0.9) 0%, rgba(18,18,31,0.95) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                0 0 60px rgba(0, 255, 136, 0.1),
+                inset 0 0 100px rgba(0, 0, 0, 0.5);
+            touch-action: none; /* Prevent default touch behaviors */
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 136, 0.03) 2px,
+                    rgba(0, 255, 136, 0.03) 4px
+                );
+            pointer-events: none;
+        }
+
+        #gameCanvas {
+            display: block;
+        }
+
+        /* Game Overlay */
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 18, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            z-index: 10;
+        }
+
+        .game-overlay.hidden {
+            display: none;
+        }
+
+        .overlay-title {
+            font-family: var(--font-game);
+            font-size: 2rem;
+            color: var(--color-primary);
+            text-shadow: 0 0 30px var(--color-primary-glow);
+            text-align: center;
+        }
+
+        .overlay-title.game-over {
+            color: var(--color-secondary);
+            text-shadow: 0 0 30px rgba(255, 51, 102, 0.5);
+        }
+
+        .overlay-subtitle {
+            font-family: var(--font-game);
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+            text-align: center;
+        }
+
+        .final-score {
+            font-family: var(--font-game);
+            font-size: 1rem;
+            color: var(--color-accent);
+        }
+
+        .start-btn {
+            font-family: var(--font-game);
+            font-size: 0.9rem;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, var(--color-primary), #00cc6a);
+            color: var(--color-bg);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px var(--color-primary-glow);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px var(--color-primary-glow);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Controls Info */
+        .controls-info {
+            margin-top: 20px;
+            padding: 20px 32px;
+            background: var(--color-bg-card);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .controls-title {
+            font-family: var(--font-game);
+            font-size: 0.7rem;
+            color: var(--color-text-muted);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .controls-grid {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .key {
+            font-family: var(--font-game);
+            font-size: 0.7rem;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: var(--color-accent);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .key-desc {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+        }
+
+        /* Explosion particles */
+        .explosion {
+            position: absolute;
+            pointer-events: none;
+            animation: explode 0.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* Orientation Warning */
+        .orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--color-bg);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .orientation-warning h2 {
+            font-family: var(--font-game);
+            font-size: 1.2rem;
+            color: var(--color-secondary);
+        }
+
+        .orientation-warning p {
+            color: var(--color-text-muted);
+        }
+
+        .orientation-warning span {
+            font-size: 4rem;
+            animation: rotate-phone 1.5s ease-in-out infinite;
+        }
+
+        @keyframes rotate-phone {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        /* Responsive styles */
+        @media (max-width: 850px) {
+            .game-header {
+                padding: 10px;
+            }
+            
+            .game-title {
+                font-size: 0.8rem;
+            }
+            
+            .game-title span {
+                font-size: 1.2rem;
+            }
+            
+            .back-link {
+                font-size: 0.7rem;
+            }
+            
+            .stats-bar {
+                gap: 15px;
+                padding: 10px 15px;
+                margin-bottom: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .stat-label {
+                font-size: 0.5rem;
+            }
+            
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            
+            .controls-info {
+                margin-top: 10px;
+                padding: 10px 15px;
+            }
+            
+            .controls-title {
+                font-size: 0.5rem;
+                margin-bottom: 8px;
+            }
+            
+            .controls-grid {
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            
+            .key {
+                font-size: 0.5rem;
+                padding: 6px 10px;
+            }
+            
+            .key-desc {
+                font-size: 0.7rem;
+            }
+            
+            .overlay-title {
+                font-size: 1.2rem;
+            }
+            
+            .overlay-subtitle {
+                font-size: 0.6rem;
+            }
+            
+            .start-btn {
+                font-size: 0.7rem;
+                padding: 12px 30px;
+            }
+        }
+        
+        /* Touch device - show touch controls */
+        @media (pointer: coarse) {
+            .controls-info .desktop-controls {
+                display: none;
+            }
+            .controls-info .touch-controls {
+                display: flex;
+            }
+        }
+        
+        @media (pointer: fine) {
+            .controls-info .desktop-controls {
+                display: flex;
+            }
+            .controls-info .touch-controls {
+                display: none;
+            }
+        }
+
+        /* Level Up Animation */
+        .level-up-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-game);
+            font-size: 2rem;
+            color: var(--color-accent);
+            text-shadow: 0 0 30px rgba(255, 204, 0, 0.8);
+            animation: levelUp 1.5s ease-out forwards;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        @keyframes levelUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="starfield">
+        <div class="stars"></div>
+    </div>
+
+    <div class="orientation-warning">
+        <span>📱</span>
+        <h2>Rotate Your Device</h2>
+        <p>Please rotate your device to landscape mode to play Emoji Invaders!</p>
+    </div>
+
+    <header class="game-header">
+        <div class="game-title">
+            <span>👾</span>
+            EMOJI INVADERS
+        </div>
+        <a href="index.html" class="back-link">
+            ← Back to Explorer
+        </a>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-label">Score</span>
+            <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">High Score</span>
+            <span class="stat-value" id="highScore">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Level</span>
+            <span class="stat-value level" id="level">1</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Lives</span>
+            <span class="stat-value lives" id="lives">❤️❤️❤️</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        
+        <div class="game-overlay" id="startOverlay">
+            <div class="overlay-title">👾 EMOJI INVADERS 👾</div>
+            <div class="overlay-subtitle">Defend Earth from the emoji invasion!</div>
+            <button class="start-btn" id="startBtn">START GAME</button>
+        </div>
+
+        <div class="game-overlay hidden" id="gameOverOverlay">
+            <div class="overlay-title game-over">💀 GAME OVER 💀</div>
+            <div class="final-score">Final Score: <span id="finalScore">0</span></div>
+            <button class="start-btn" id="restartBtn">PLAY AGAIN</button>
+        </div>
+
+        <div class="game-overlay hidden" id="pauseOverlay">
+            <div class="overlay-title">⏸️ PAUSED</div>
+            <div class="overlay-subtitle">Press ESC or P to resume</div>
+        </div>
+    </div>
+
+    <div class="controls-info">
+        <div class="controls-title">CONTROLS</div>
+        <div class="controls-grid desktop-controls">
+            <div class="control-item">
+                <span class="key">🖱️ MOVE</span>
+                <span class="key-desc">Aim</span>
+            </div>
+            <div class="control-item">
+                <span class="key">🖱️ CLICK</span>
+                <span class="key-desc">Shoot</span>
+            </div>
+            <div class="control-item">
+                <span class="key">P</span>
+                <span class="key-desc">Pause</span>
+            </div>
+        </div>
+        <div class="controls-grid touch-controls">
+            <div class="control-item">
+                <span class="key">👆 DRAG</span>
+                <span class="key-desc">Move & Auto-Fire</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Configuration
+        const CONFIG = {
+            canvasWidth: 800,
+            canvasHeight: 500,
+            playerSpeed: 7,
+            bulletSpeed: 10,
+            enemyBulletSpeed: 4,
+            invaderRows: 4,
+            invadersPerRow: 10,
+            invaderSpacing: 55,
+            invaderDropAmount: 30,
+            baseInvaderSpeed: 1,
+            shootCooldown: 250,
+            enemyShootChance: 0.003
+        };
+
+        // Emoji sets for different enemy types
+        const ENEMY_EMOJIS = {
+            row1: ['👾', '👻', '💀', '👹', '🤖'],
+            row2: ['👽', '🛸', '🌀', '💫', '⚡'],
+            row3: ['🐙', '🦑', '🦠', '🔮', '💎'],
+            row4: ['🎃', '🌚', '🌝', '☄️', '🌟']
+        };
+
+        const PLAYER_EMOJI = '🚀';
+        const BULLET_EMOJI = '⚡';
+        const ENEMY_BULLET_EMOJI = '🔥';
+        const EXPLOSION_EMOJIS = ['💥', '✨', '💫', '🌟'];
+        const POWERUP_EMOJIS = ['⭐', '🛡️', '⚡'];
+
+        // Game State
+        let canvas, ctx;
+        let gameState = 'start'; // start, playing, paused, gameover
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('emojiInvadersHighScore')) || 0;
+        let lives = 3;
+        let level = 1;
+        let lastShot = 0;
+
+        // Game Objects
+        let player = {
+            x: CONFIG.canvasWidth / 2 - 25,
+            y: CONFIG.canvasHeight - 60,
+            width: 50,
+            height: 50,
+            emoji: PLAYER_EMOJI
+        };
+
+        let bullets = [];
+        let enemyBullets = [];
+        let invaders = [];
+        let explosions = [];
+        let powerups = [];
+
+        let invaderDirection = 1;
+        let invaderSpeed = CONFIG.baseInvaderSpeed;
+
+        // Input State
+        const keys = {
+            left: false,
+            right: false,
+            space: false
+        };
+
+        // Mouse State
+        let mouseX = null; // null means mouse hasn't entered canvas yet
+
+        // Touch State
+        let touchX = null;
+        let isTouching = false;
+        let canvasScale = 1; // Scale factor for responsive canvas
+
+        // Initialize Game
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            document.getElementById('highScore').textContent = highScore;
+            
+            // Event Listeners
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('restartBtn').addEventListener('click', startGame);
+
+            // Mouse Event Listeners
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+
+            // Touch Event Listeners
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd);
+            canvas.addEventListener('touchcancel', handleTouchEnd);
+
+            // Responsive canvas
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('orientationchange', handleOrientationChange);
+            resizeCanvas();
+            checkOrientation();
+
+            // Start render loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 200;
+            const aspectRatio = CONFIG.canvasWidth / CONFIG.canvasHeight;
+            
+            let newWidth = maxWidth;
+            let newHeight = newWidth / aspectRatio;
+            
+            if (newHeight > maxHeight) {
+                newHeight = maxHeight;
+                newWidth = newHeight * aspectRatio;
+            }
+            
+            // On desktop, don't go larger than original size
+            if (window.innerWidth > 850) {
+                newWidth = Math.min(newWidth, CONFIG.canvasWidth);
+                newHeight = Math.min(newHeight, CONFIG.canvasHeight);
+            }
+            
+            canvasScale = newWidth / CONFIG.canvasWidth;
+            
+            container.style.width = newWidth + 'px';
+            container.style.height = newHeight + 'px';
+            canvas.style.width = newWidth + 'px';
+            canvas.style.height = newHeight + 'px';
+        }
+
+        function checkOrientation() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const isMobile = window.innerWidth <= 850 || 'ontouchstart' in window;
+            const warning = document.querySelector('.orientation-warning');
+            
+            if (isMobile && isPortrait && warning) {
+                warning.style.display = 'flex';
+            } else if (warning) {
+                warning.style.display = 'none';
+            }
+        }
+
+        function handleOrientationChange() {
+            setTimeout(() => {
+                resizeCanvas();
+                checkOrientation();
+            }, 100);
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchX = (touch.clientX - rect.left) / canvasScale;
+            isTouching = true;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                touchX = (touch.clientX - rect.left) / canvasScale;
+            }
+        }
+
+        function handleTouchEnd() {
+            isTouching = false;
+            touchX = null;
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) / canvasScale;
+        }
+
+        function handleMouseDown(e) {
+            if (gameState === 'playing') {
+                e.preventDefault();
+                shoot();
+            }
+        }
+
+        function handleMouseLeave() {
+            mouseX = null;
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === ' ') {
+                e.preventDefault();
+                keys.space = true;
+            }
+            if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && gameState === 'playing') {
+                togglePause();
+            } else if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') && gameState === 'paused') {
+                togglePause();
+            }
+        }
+
+        function handleKeyUp(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === ' ') keys.space = false;
+        }
+
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused';
+                document.getElementById('pauseOverlay').classList.remove('hidden');
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                document.getElementById('pauseOverlay').classList.add('hidden');
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            lives = 3;
+            level = 1;
+            bullets = [];
+            enemyBullets = [];
+            explosions = [];
+            powerups = [];
+            invaderSpeed = CONFIG.baseInvaderSpeed;
+            
+            player.x = CONFIG.canvasWidth / 2 - 25;
+            
+            createInvaders();
+            updateUI();
+            
+            document.getElementById('startOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            
+            gameState = 'playing';
+        }
+
+        function createInvaders() {
+            invaders = [];
+            const startX = 50;
+            const startY = 50;
+            
+            for (let row = 0; row < CONFIG.invaderRows; row++) {
+                const emojiSet = ENEMY_EMOJIS[`row${row + 1}`];
+                for (let col = 0; col < CONFIG.invadersPerRow; col++) {
+                    invaders.push({
+                        x: startX + col * CONFIG.invaderSpacing,
+                        y: startY + row * 45,
+                        width: 40,
+                        height: 40,
+                        emoji: emojiSet[Math.floor(Math.random() * emojiSet.length)],
+                        row: row,
+                        points: (4 - row) * 10 + 10
+                    });
+                }
+            }
+            
+            invaderDirection = 1;
+        }
+
+        function shoot() {
+            const now = Date.now();
+            if (now - lastShot > CONFIG.shootCooldown) {
+                bullets.push({
+                    x: player.x + player.width / 2 - 10,
+                    y: player.y,
+                    width: 20,
+                    height: 30,
+                    emoji: BULLET_EMOJI
+                });
+                lastShot = now;
+            }
+        }
+
+        function enemyShoot() {
+            // Find invaders in each column that can shoot
+            const columns = {};
+            invaders.forEach(inv => {
+                const col = Math.floor(inv.x / CONFIG.invaderSpacing);
+                if (!columns[col] || inv.y > columns[col].y) {
+                    columns[col] = inv;
+                }
+            });
+            
+            // Random chance for bottom invaders to shoot
+            Object.values(columns).forEach(inv => {
+                if (Math.random() < CONFIG.enemyShootChance * level) {
+                    enemyBullets.push({
+                        x: inv.x + inv.width / 2 - 10,
+                        y: inv.y + inv.height,
+                        width: 20,
+                        height: 20,
+                        emoji: ENEMY_BULLET_EMOJI
+                    });
+                }
+            });
+        }
+
+        function update() {
+            if (gameState !== 'playing') return;
+
+            // Player movement - Touch takes priority, then mouse, then keyboard
+            if (touchX !== null) {
+                // Center the ship on the touch position
+                const targetX = touchX - player.width / 2;
+                // Clamp to canvas bounds
+                player.x = Math.max(0, Math.min(CONFIG.canvasWidth - player.width, targetX));
+                // Auto-fire while touching
+                if (isTouching) {
+                    shoot();
+                }
+            } else if (mouseX !== null) {
+                // Center the ship on the mouse position
+                const targetX = mouseX - player.width / 2;
+                // Clamp to canvas bounds
+                player.x = Math.max(0, Math.min(CONFIG.canvasWidth - player.width, targetX));
+            } else {
+                // Keyboard fallback
+                if (keys.left && player.x > 0) {
+                    player.x -= CONFIG.playerSpeed;
+                }
+                if (keys.right && player.x < CONFIG.canvasWidth - player.width) {
+                    player.x += CONFIG.playerSpeed;
+                }
+            }
+            if (keys.space) {
+                shoot();
+            }
+
+            // Update bullets
+            bullets = bullets.filter(b => {
+                b.y -= CONFIG.bulletSpeed;
+                return b.y > -b.height;
+            });
+
+            // Update enemy bullets
+            enemyBullets = enemyBullets.filter(b => {
+                b.y += CONFIG.enemyBulletSpeed;
+                return b.y < CONFIG.canvasHeight;
+            });
+
+            // Enemy shooting
+            enemyShoot();
+
+            // Update invaders
+            let shouldDrop = false;
+            let hitEdge = false;
+
+            invaders.forEach(inv => {
+                inv.x += invaderSpeed * invaderDirection;
+                
+                if (inv.x <= 0 || inv.x >= CONFIG.canvasWidth - inv.width) {
+                    hitEdge = true;
+                }
+            });
+
+            if (hitEdge) {
+                invaderDirection *= -1;
+                shouldDrop = true;
+            }
+
+            if (shouldDrop) {
+                invaders.forEach(inv => {
+                    inv.y += CONFIG.invaderDropAmount;
+                    
+                    // Check if invaders reached the player
+                    if (inv.y + inv.height >= player.y) {
+                        gameOver();
+                    }
+                });
+            }
+
+            // Collision: bullets vs invaders
+            bullets.forEach((bullet, bi) => {
+                invaders.forEach((inv, ii) => {
+                    if (checkCollision(bullet, inv)) {
+                        // Create explosion
+                        explosions.push({
+                            x: inv.x,
+                            y: inv.y,
+                            emoji: EXPLOSION_EMOJIS[Math.floor(Math.random() * EXPLOSION_EMOJIS.length)],
+                            timer: 20
+                        });
+                        
+                        score += inv.points;
+                        bullets.splice(bi, 1);
+                        invaders.splice(ii, 1);
+                        updateUI();
+                        
+                        // Random powerup drop
+                        if (Math.random() < 0.05) {
+                            powerups.push({
+                                x: inv.x,
+                                y: inv.y,
+                                width: 30,
+                                height: 30,
+                                emoji: POWERUP_EMOJIS[Math.floor(Math.random() * POWERUP_EMOJIS.length)],
+                                type: Math.floor(Math.random() * 3)
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Collision: enemy bullets vs player
+            enemyBullets.forEach((bullet, bi) => {
+                if (checkCollision(bullet, player)) {
+                    enemyBullets.splice(bi, 1);
+                    lives--;
+                    updateUI();
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    } else {
+                        // Flash effect
+                        explosions.push({
+                            x: player.x,
+                            y: player.y,
+                            emoji: '💥',
+                            timer: 15
+                        });
+                    }
+                }
+            });
+
+            // Update powerups
+            powerups = powerups.filter(p => {
+                p.y += 2;
+                
+                if (checkCollision(p, player)) {
+                    // Apply powerup
+                    if (p.type === 0) { // Extra points
+                        score += 50;
+                    } else if (p.type === 1) { // Shield - extra life
+                        lives = Math.min(lives + 1, 5);
+                    } else { // Speed boost
+                        CONFIG.shootCooldown = Math.max(100, CONFIG.shootCooldown - 25);
+                    }
+                    updateUI();
+                    return false;
+                }
+                
+                return p.y < CONFIG.canvasHeight;
+            });
+
+            // Update explosions
+            explosions = explosions.filter(e => {
+                e.timer--;
+                return e.timer > 0;
+            });
+
+            // Check for level complete
+            if (invaders.length === 0) {
+                nextLevel();
+            }
+        }
+
+        function checkCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        function nextLevel() {
+            level++;
+            invaderSpeed = CONFIG.baseInvaderSpeed + (level - 1) * 0.5;
+            CONFIG.enemyShootChance = 0.003 + (level - 1) * 0.001;
+            
+            createInvaders();
+            updateUI();
+            
+            // Show level up text
+            showLevelUp();
+        }
+
+        function showLevelUp() {
+            const levelText = document.createElement('div');
+            levelText.className = 'level-up-text';
+            levelText.textContent = `LEVEL ${level}`;
+            document.querySelector('.game-container').appendChild(levelText);
+            
+            setTimeout(() => levelText.remove(), 1500);
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('emojiInvadersHighScore', highScore);
+                document.getElementById('highScore').textContent = highScore;
+            }
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+            
+            let heartsHTML = '';
+            for (let i = 0; i < lives; i++) {
+                heartsHTML += '❤️';
+            }
+            document.getElementById('lives').textContent = heartsHTML || '💔';
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, CONFIG.canvasWidth, CONFIG.canvasHeight);
+            
+            // Draw player
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(player.emoji, player.x + player.width / 2, player.y + player.height / 2);
+
+            // Draw bullets
+            ctx.font = '25px Arial';
+            bullets.forEach(b => {
+                ctx.fillText(b.emoji, b.x + b.width / 2, b.y + b.height / 2);
+            });
+
+            // Draw enemy bullets
+            ctx.font = '20px Arial';
+            enemyBullets.forEach(b => {
+                ctx.fillText(b.emoji, b.x + b.width / 2, b.y + b.height / 2);
+            });
+
+            // Draw invaders
+            ctx.font = '35px Arial';
+            invaders.forEach(inv => {
+                ctx.fillText(inv.emoji, inv.x + inv.width / 2, inv.y + inv.height / 2);
+            });
+
+            // Draw powerups
+            ctx.font = '28px Arial';
+            powerups.forEach(p => {
+                ctx.fillText(p.emoji, p.x + p.width / 2, p.y + p.height / 2);
+            });
+
+            // Draw explosions
+            ctx.font = '40px Arial';
+            explosions.forEach(e => {
+                const scale = 1 + (20 - e.timer) * 0.05;
+                ctx.save();
+                ctx.translate(e.x + 20, e.y + 20);
+                ctx.scale(scale, scale);
+                ctx.globalAlpha = e.timer / 20;
+                ctx.fillText(e.emoji, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start initialization when DOM is ready
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
